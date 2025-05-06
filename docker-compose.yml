@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile.mysql
+    container_name: vacantes_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: vacantes_BBDD_2025_RETO
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: vacantes_user
+      MYSQL_PASSWORD: vacantespass2025
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./db/user.sql:/docker-entrypoint-initdb.d/user.sql
+    networks:
+      - vacantes_net
+
+  backend:
+    build: .
+    container_name: backend
+    depends_on:
+      - db
+    ports:
+      - "9005:9005"
+    networks:
+      - vacantes_net
+
+  frontend:
+    build:
+      context: ./angular
+    container_name: frontend
+    restart: always
+    networks:
+     - vacantes_net
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - vacantes_net
+
+volumes:
+  db_data:
+  certbot-etc:
+  certbot-var:
+
+networks:
+  vacantes_net:
