@@ -1,2 +1,2 @@
 FROM nginx:alpine
-COPY dist/ /usr/share/nginx/html
+COPY dist/reto3-vacantes-app/browser/ /usr/share/nginx/html
