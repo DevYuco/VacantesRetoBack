@@ -35,7 +35,7 @@ services:
     container_name: frontend
     restart: always
     networks:
-     - vacantes_net
+      - vacantes_net
 
   nginx:
     image: nginx:latest
@@ -45,18 +45,23 @@ services:
       - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
+      - ./certbot/etc:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     depends_on:
       - backend
       - frontend
     networks:
       - vacantes_net
 
+  certbot:
+    image: certbot/certbot:latest
+    container_name: certbot
+    volumes:
+      - ./certbot/etc:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+
 volumes:
   db_data:
-  certbot-etc:
-  certbot-var:
 
 networks:
   vacantes_net:

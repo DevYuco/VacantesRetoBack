@@ -70,7 +70,8 @@ public class DataUserConfiguration {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:4200", 
-            "http://reto.matabuena.com"
+            "http://reto.matabuena.com",
+            "https://retovacantes.matabuena.com"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
