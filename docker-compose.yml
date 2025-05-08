@@ -1,67 +1,60 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  db:
-    build:
-      context: ./db
-      dockerfile: Dockerfile.mysql
-    container_name: vacantes_db
-    restart: always
-    environment:
-      MYSQL_DATABASE: vacantes_BBDD_2025_RETO
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: vacantes_user
-      MYSQL_PASSWORD: vacantespass2025
-    volumes:
-      - db_data:/var/lib/mysql
-      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
-      - ./db/user.sql:/docker-entrypoint-initdb.d/user.sql
-    networks:
-      - vacantes_net
+    db:
+        build:
+            context: ./db
+            dockerfile: Dockerfile.mysql
+        container_name: vacantes_db
+        restart: always
+        environment:
+            MYSQL_DATABASE: vacantes_BBDD_2025_RETO
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_USER: vacantes_user
+            MYSQL_PASSWORD: vacantespass2025
+        volumes:
+            - db_data:/var/lib/mysql
+            - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+            - ./db/user.sql:/docker-entrypoint-initdb.d/user.sql
+        networks: [vacantes_net]
 
-  backend:
-    build: .
-    container_name: backend
-    depends_on:
-      - db
-    ports:
-      - "9005:9005"
-    networks:
-      - vacantes_net
+    backend:
+        build: .
+        container_name: backend
+        depends_on: [db]
+        expose: ["9005"]
+        networks: [vacantes_net]
 
-  frontend:
-    build:
-      context: ./angular
-    container_name: frontend
-    restart: always
-    networks:
-      - vacantes_net
+    apache:
+        image: httpd:2.4
+        container_name: apache
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
+            - ./angular/dist/reto3-vacantes-app:/usr/local/apache2/htdocs
+            - ./certbot/etc:/etc/letsencrypt
+            - ./certbot/www:/var/www/certbot
+        depends_on: [backend]
+        networks: [vacantes_net]
 
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./certbot/etc:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    depends_on:
-      - backend
-      - frontend
-    networks:
-      - vacantes_net
+    certbot:
+        image: certbot/certbot
+        container_name: certbot
+        volumes:
+            - ./certbot/etc:/etc/letsencrypt
+            - ./certbot/www:/var/www/certbot
+        entrypoint: >
+            sh -c "sleep 10 &&
+                   certbot certonly --webroot -w /var/www/certbot
+                   --email andresmatabuena15@gmail.com --agree-tos --no-eff-email --force-renewal
+                   -d retovacantes.matabuena.com -d apireto.matabuena.com &&
+                   echo '🎉  Certificados emitidos; reinicia Apache con >> docker compose restart apache <<'"
 
-  certbot:
-    image: certbot/certbot:latest
-    container_name: certbot
-    volumes:
-      - ./certbot/etc:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
 
 volumes:
-  db_data:
+    db_data:
 
 networks:
-  vacantes_net:
+    vacantes_net:
